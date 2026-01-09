@@ -7,4 +7,10 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app
-  
+
+  frontend:
+    image: nginx:alpine
+    ports:
+      - "80:80" 
+    volumes:
+      - ./frontend:/usr/share/nginx/html
