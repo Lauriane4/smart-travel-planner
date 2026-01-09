@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NY Travel Planner - Optimiseur DevOps</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; line-height: 1.6; }
+        .container { border: 1px solid #ddd; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .day-card { background: #e9ecef; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 6px solid #007bff; }
+        .input-group { display: flex; gap: 10px; margin-bottom: 10px; }
+        input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        button { cursor: pointer; padding: 10px 15px; border: none; border-radius: 5px; transition: 0.3s; }
+        .btn-add { background-color: #6c757d; color: white; }
+        .btn-submit { background-color: #28a745; color: white; width: 100%; margin-top: 20px; font-weight: bold; }
+        button:hover { opacity: 0.8; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗽 NY Trip Optimizer</h1>
+        
+        <label for="days">Nombre de jours de séjour :</label>
+        <input type="number" id="days" value="2" min="1" title="Entrez le nombre de jours">
+        
+        <hr>
+
+        <h3>Activités prévues</h3>
+        <div id="activities-list">
+            <div class="input-group">
+                <input type="text" placeholder="Nom (ex: Statue Liberté)" class="act-name" title="Nom de l'activité" aria-label="Nom de l'activité">
+                <input type="text" placeholder="Adresse précise à NY" class="act-addr" title="Adresse de l'activité" aria-label="Adresse de l'activité">
+                <select class="act-cat" title="Catégorie" aria-label="Catégorie de l'activité">
+                    <option value="Musée">Musée</option>
+                    <option value="Parc">Parc</option>
+                    <option value="Restaurant">Restaurant</option>
+                    <option value="Monument">Monument</option>
+                    <option value="Shopping">Shopping</option>
+                    <option value="Boite de nuit">Boite de nuit</option>
+                    <option value="Autre">Autre</option>
+                </select>
+            </div>
+        </div>
+        
+        <button type="button" class="btn-add" onclick="addActivityField()">+ Ajouter une activité</button>
+        <button type="button" class="btn-submit" onclick="sendData()">OPTIMISER MON TRAJET</button>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        // Fonction pour ajouter dynamiquement des lignes d'activités
+        function addActivityField() {
+            const container = document.getElementById('activities-list');
+            const div = document.createElement('div');
+            div.className = 'input-group';
+            div.innerHTML = `
+                <input type="text" placeholder="Nom" class="act-name" title="Nom de l'activité">
+                <input type="text" placeholder="Adresse" class="act-addr" title="Adresse de l'activité">
+                <select class="act-cat" title="Catégorie">
+                    <option value="Musée">Musée</option>
+                    <option value="Parc">Parc</option>
+                    <option value="Restaurant">Restaurant</option>
+                    <option value="Monument">Monument</option>
+                    <option value="Shopping">Shopping</option>
+                    <option value="Boite de nuit">Boite de nuit</option>
+                    <option value="Autre">Autre</option>
+                </select>
+            `;
+            container.appendChild(div);
+        }
+
+        // Fonction pour envoyer les données au backend
+        async function sendData() {
+            const days = document.getElementById('days').value;
+            const names = document.querySelectorAll('.act-name');
+            const addresses = document.querySelectorAll('.act-addr');
+            const categories = document.querySelectorAll('.act-cat');
+
+            let activities = [];
+            for(let i=0; i<names.length; i++) {
+                if(names[i].value && addresses[i].value) {
+                    activities.push({
+                        name: names[i].value, 
+                        address: addresses[i].value,
+                        category: categories[i].value
+                    });
+                }
+            }
+
+            try {
+                // On appelle l'API Dockerisée
+                const response = await fetch('http://localhost:8000/optimize', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        days: parseInt(days), 
+                        activities: activities
+                    })
+                });
+                const result = await response.json();
+                displayResult(result);
+            } catch (error) {
+                alert("Erreur de connexion au backend. Vérifie que Docker tourne !");
+            }
+        }
+
+        function displayResult(data) {
+            try {
+                let html = "<h2>📅 Votre itinéraire optimisé :</h2>";
+                // On boucle sur chaque jour (Jour 1, Jour 2...)
+                for (const [day, activities] of Object.entries(data)) {
+                    html += `<div class="day-card"><strong>${day}</strong><ul>`;
+                    
+                    // ICI : On boucle sur la liste d'objets
+                    activities.forEach(act => {
+                        // act.name, act.category et act.address doivent exister
+                        html += `<li><strong>${act.name}</strong> (${act.category}) - ${act.address}</li>`;
+                    });
+                    
+                    html += `</ul></div>`;
+                }
+                document.getElementById('result').innerHTML = html;
+            } catch (e) {
+                console.error("Erreur d'affichage :", e);
+                document.getElementById('result').innerHTML = "<p style='color:red;'>Erreur lors de l'affichage des données.</p>";
+            }
+}
+    </script>
+</body>
+</html>
