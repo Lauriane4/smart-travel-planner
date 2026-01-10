@@ -22,7 +22,7 @@ jobs :
       - name: Lancer les tests backend
         run: |
           pip install pytest httpx
-          pytest ./backend/tests
+          pytest ./backend/tests/
 
       - name : Build et Run Docker compose 
         run : |
