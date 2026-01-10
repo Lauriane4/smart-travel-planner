@@ -1,0 +1,29 @@
+name : CI Pipeline
+on : [push, pull_request]
+jobs :
+  build :
+    runs-on : ubuntu-latest
+    steps :
+      - name : Récupérer le code
+        uses : actions/checkout@v4
+      
+      - name : Vérifier la qualité du code backend
+        run : |
+          pip install flake8
+          # --count : compte les erreurs
+          # --select=E9,F63,F7,F82 : vérifie les erreurs de syntaxe graves (le code ne marchera pas)
+          # --show-source : montre la ligne qui pose problème
+          flake8 ./backend --count --select=E9,F63,F7,F82 --show-source --statistics
+      
+      - name : Vérifier la qualité du code frontend
+        run : |
+          npx eslint ./frontend
+
+      - name : Build et Run Docker compose 
+        run : |
+          docker compose up --build -d
+
+      - name : Vérifier l'état des conteneurs Docker
+        run : |
+          docker compose ps
+  
