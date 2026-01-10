@@ -7,3 +7,25 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 
         .btn-add { background-color: #6c757d; color: white; }
         .btn-submit { background-color: #28a745; color: white; width: 100%; margin-top: 20px; font-weight: bold; }
         button:hover { opacity: 0.8; }
+
+
+textarea {
+    width: 100%;
+    min-height: 300px;
+    padding: 15px;
+    border: 2px solid #dee2e6; 
+    border-radius: 8px;
+    font-family: 'Courier New', Courier, monospace; 
+    font-size: 14px;
+    line-height: 1.5;
+    resize: vertical; /* Permet à l'utilisateur d'agrandir encore plus si besoin */
+    box-sizing: border-box; /* Évite que le padding ne fasse dépasser le textarea */
+    background-color: #fafafa;
+}
+
+textarea:focus {
+    border-color: #007bff;
+    outline: none;
+    background-color: #fff;
+    box-shadow: 0 0 8px rgba(0,123,255,0.2);
+}
