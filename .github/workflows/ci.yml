@@ -17,8 +17,8 @@ jobs :
       
       - name : Vérifier la qualité du code frontend
         run : |
-          npm install -g eslint
-          eslint ./frontend --ext .js,.jsx,.ts,.tsx
+          npm install eslint
+          eslint ./frontend 
 
       - name : Build et Run Docker compose 
         run : |
