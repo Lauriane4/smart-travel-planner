@@ -4,21 +4,27 @@ jobs :
   build :
     runs-on : ubuntu-latest
     steps :
-      - name : Vérifier le code
+      - name : Récupérer le code
         uses : actions/checkout@v4
       
-      - name : Configurer Python
-        uses : actions/setup-python@v4
-        with :
-          python-version : '3.11'
+      - name : Vérifier la qualité du code backend
+        run : |
+          pip install flake8
+          # --count : compte les erreurs
+          # --select=E9,F63,F7,F82 : vérifie les erreurs de syntaxe graves (le code ne marchera pas)
+          # --show-source : montre la ligne qui pose problème
+          flake8 ./backend --count --select=E9,F63,F7,F82 --show-source --statistics
       
-      - name : Installer les dépendances backend
+      - name : Vérifier la qualité du code frontend
         run : |
-          python -m pip install --upgrade pip
-          pip install -r backend/requirements.txt
+          npm install -g eslint
+          eslint ./frontend --ext .js,.jsx,.ts,.tsx
 
-      - name : build et run Docker Compose
+      - name : Build et Run Docker compose 
         run : |
-          docker-compose -f docker-compose.yml up --build -d
+          docker compose up --build -d
 
+      - name : Vérifier l'état des conteneurs Docker
+        run : |
+          docker compose ps
   
