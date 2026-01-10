@@ -19,7 +19,7 @@ Assurez-vous d'avoir **Docker** et **Docker Compose** installés.
 
 ```bash
 # Cloner le projet
-git clone <url-de-ton-depot>
+git clone https://github.com/Lauriane4/smart-travel-planner.git
 
 # Lancer l'application
 docker-compose up --build
@@ -29,10 +29,10 @@ docker-compose up --build
 L'application est ensuite accessible sur http://localhost.
 
 ## Objectifs DevOps accomplis
-[x] Conteneurisation multi-services.
+- Conteneurisation multi-services.
 
-[x] Automatisation de la qualité du code (Linting).
+- Automatisation de la qualité du code (Linting).
 
-[x] Pipeline d'intégration continue (CI).
+- Pipeline d'intégration continue (CI).
 
-[x] Séparation des responsabilités (SOC) entre Front et Back.
+- Séparation des responsabilités (SOC) entre Front et Back.
