@@ -26,7 +26,7 @@ def test_optimize_itinerary():
     response = client.post("/optimize", json=request_data)
     assert response.status_code == 200
     json_response = response.json()
-    assert len(json_response == 2 )  # Doit contenir 2 jours
+    assert len(json_response) == 2   # Doit contenir 2 jours
 
 def test_optimize_itinerary_no_addresses_found():
     request_data = {
