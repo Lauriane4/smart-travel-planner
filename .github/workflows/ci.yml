@@ -19,6 +19,11 @@ jobs :
         run : |
           npx eslint ./frontend
 
+      - name: Lancer les tests backend
+        run: |
+          pip install pytest httpx
+          pytest ./backend/tests
+
       - name : Build et Run Docker compose 
         run : |
           docker compose up --build -d
