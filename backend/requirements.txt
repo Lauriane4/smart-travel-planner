@@ -4,3 +4,4 @@ pydantic
 geopy
 scikit-learn
 pandas
+k_means-constrained
