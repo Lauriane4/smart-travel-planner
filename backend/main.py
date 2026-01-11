@@ -4,10 +4,10 @@ from typing import List
 from pydantic import BaseModel
 from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut
-
 from sklearn.cluster import KMeans
 import pandas as pd
 from fastapi.middleware.cors import CORSMiddleware
+from k_means_constrained import KMeansConstrained
 
 app = FastAPI() 
 
@@ -61,13 +61,26 @@ def optimize_itinerary(request: PlanRequest):
     # Création d'un DataFrame
     df = pd.DataFrame(data) 
 
-    # Clustering des activités
-    kmeans = KMeans(n_clusters=request.days)
-    df['day_cluster'] = kmeans.fit_predict(df[['latitude', 'longitude']])
+    num_activities = len(df)
+    n_days = request.days
+
+    # --- LOGIQUE D'ÉQUILIBRAGE ---
+    min_per_day = num_activities // n_days
+    max_per_day = min_per_day + 1
+
+    # On utilise KMeansConstrained pour forcer cette répartition
+    clf = KMeansConstrained(
+        n_clusters=n_days,
+        size_min=min_per_day,
+        size_max=max_per_day,
+        random_state=0
+    )
+    
+    df['day_cluster'] = clf.fit_predict(df[['latitude', 'longitude']])
 
     # Organisation des activités par jour
     itinerary = {}
-    for day in range(request.days):
+    for day in range(n_days):
         day_activities = df[df['day_cluster'] == day]
         itinerary[f'Day {day + 1}'] = day_activities[['name', 'category', 'address']].to_dict(orient='records')
 
