@@ -1,4 +1,5 @@
 from time import sleep
+from click import DateTime
 from fastapi import FastAPI
 from typing import List
 from pydantic import BaseModel
@@ -22,12 +23,26 @@ Base = declarative_base()
 
 # Définition du modèle de données pour l'historique des plans
 class ItineraryHistory(Base):
-    __tablename__ = "itinerary_history"
+    __tablename__ = "itinerary"
     id = Column(Integer, primary_key=True, index=True)
     city = Column(String, nullable=False)
     days = Column(Integer, nullable=False)
-    activities = Column(String, nullable=False) 
-    total_activities = Column(Integer, nullable=False)
+    created_at = Column(DateTime, nullable=False)
+
+    activities = relationship("Activity", back_populates="itinerary")
+
+class Activity(Base):
+    __tablename__ = "activity"
+    id = Column(Integer, primary_key=True, index=True)
+    itinerary_id = Column(Integer, ForeignKey("itinerary.id"), nullable=False)
+    name = Column(String, nullable=False)
+    category = Column(String, nullable=False)
+    address = Column(String, nullable=False)
+    latitude = Column(Float, nullable=False)
+    longitude = Column(Float, nullable=False)
+    day_assigned = Column(Integer, nullable=False)
+
+    itinerary = relationship("ItineraryHistory", back_populates="activities")
 
 Base.metadata.create_all(bind=engine)
 
