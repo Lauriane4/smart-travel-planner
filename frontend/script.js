@@ -194,3 +194,38 @@ for (const [day, activities] of Object.entries(data)) {
         map.invalidateSize();
     }, 200);
 }
+
+async function fetchRecentItineraries() {
+    try {
+        const res = await fetch("http://localhost:8000/history");
+        const responseData = await res.json();
+        
+        // Debugging
+        console.log("Brut reçu du serveur :", responseData);
+
+        if (Array.isArray(responseData)) {
+            displayRecentItineraries(responseData);
+        } else {
+            console.error("Le backend n'a pas renvoyé une liste, mais :", responseData);
+            document.getElementById('recent-itineraries').innerHTML = "Aucun historique disponible.";
+        }
+    } catch (e) {
+        console.error("Erreur réseau :", e);
+    }
+}
+
+
+function displayRecentItineraries(data) {
+    const container = document.getElementById('recent-itineraries');
+    container.innerHTML = "";
+    data.forEach(itin => {
+        const div = document.createElement("div");
+        div.className = "day-card";
+        div.innerHTML = `
+            <strong>${itin.city}</strong> - ${itin.days} jours<br>
+            ${JSON.parse(itin.activities).map(a => `${a.name} (${a.category})`).join("<br>")}
+            <br><em>${new Date(itin.created_at).toLocaleString()}</em>
+        `;
+        container.appendChild(div);
+    });
+}

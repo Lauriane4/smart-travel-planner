@@ -1,6 +1,7 @@
+import json
 from time import sleep
 from click import DateTime
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from typing import List
 from pydantic import BaseModel
 from geopy.geocoders import Nominatim
@@ -9,10 +10,21 @@ from sklearn.cluster import KMeans
 import pandas as pd
 from fastapi.middleware.cors import CORSMiddleware
 from k_means_constrained import KMeansConstrained
-from sqlalchemy import create_engine, Column, Integer, String, Float
+from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import sessionmaker, Session, relationship
+from datetime import datetime, timedelta
 
+# Initialisation de l'application FastAPI
+app = FastAPI() 
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], 
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Configuration SQL 
 DATABASE_URL = "postgresql://user:pass@db:5432/travel_db"
@@ -27,9 +39,9 @@ class ItineraryHistory(Base):
     id = Column(Integer, primary_key=True, index=True)
     city = Column(String, nullable=False)
     days = Column(Integer, nullable=False)
+    activities_json = Column(String, nullable=False)  # Stocke les activités sous forme de chaîne JSON
+    total_activities = Column(Integer, nullable=False)
     created_at = Column(DateTime, nullable=False)
-
-    activities = relationship("Activity", back_populates="itinerary")
 
 class Activity(Base):
     __tablename__ = "activity"
@@ -42,26 +54,13 @@ class Activity(Base):
     longitude = Column(Float, nullable=False)
     day_assigned = Column(Integer, nullable=False)
 
-    itinerary = relationship("ItineraryHistory", back_populates="activities")
-
+   
 Base.metadata.create_all(bind=engine)
-
-
-# Initialisation de l'application FastAPI
-app = FastAPI() 
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"], 
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 
 geolocator = Nominatim(user_agent="travel_planner", timeout=10)
 
-class Activity(BaseModel):
+class ActivitySchema(BaseModel):
     name: str
     address: str
     category: str
@@ -70,7 +69,7 @@ class Activity(BaseModel):
 class PlanRequest(BaseModel):
     days : int
     city: str
-    activities: List[Activity]
+    activities: List[ActivitySchema]
 
 @app.get("/")
 def read_root():
@@ -98,7 +97,8 @@ def optimize_itinerary(request: PlanRequest):
     if not data:
         return {"status": "error", "message": "Aucune adresse n'a été trouvée. Vérifie l'orthographe."}
     
-    # Création d'un DataFrame
+
+
     df = pd.DataFrame(data) 
 
     num_activities = len(df)
@@ -115,7 +115,7 @@ def optimize_itinerary(request: PlanRequest):
         size_max=max_per_day,
         random_state=0
     )
-    
+
     df['day_cluster'] = clf.fit_predict(df[['latitude', 'longitude']])
 
 
@@ -124,9 +124,11 @@ def optimize_itinerary(request: PlanRequest):
     itinerary_record = ItineraryHistory(
         city=request.city,
         days=n_days,
-        activities=str([activity.dict() for activity in request.activities]),
-        total_activities=num_activities
+        activities_json=json.dumps(data),
+        total_activities=num_activities,
+        created_at=datetime.utcnow()
     )
+    
     db.add(itinerary_record)
     db.commit()
     db.close()
@@ -138,3 +140,29 @@ def optimize_itinerary(request: PlanRequest):
         itinerary[f'Day {day + 1}'] = day_activities[['name', 'category', 'address', 'latitude', 'longitude']].to_dict(orient='records')
 
     return itinerary
+
+@app.get("/history")
+def get_history():
+    db = SessionLocal()
+    try:
+        five_days_ago = datetime.utcnow() - timedelta(days=5)
+        records = db.query(ItineraryHistory)\
+        .filter(ItineraryHistory.created_at >= five_days_ago)\
+        .order_by(ItineraryHistory.created_at.desc())\
+        .all()
+
+        history_list = []
+        for itin in records:
+            history_list.append({
+                "id": itin.id,
+                "city": itin.city,
+                "days": itin.days,
+                "activities": itin.activities_json if hasattr(itin, 'activities_json') else "[]",
+                "created_at": itin.created_at.isoformat()
+            })
+        return history_list 
+    except Exception as e:
+        print(f"Erreur lors de la récupération de l'historique : {e}")
+        return []
+    finally:
+        db.close()
