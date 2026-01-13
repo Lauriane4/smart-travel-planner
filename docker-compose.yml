@@ -7,10 +7,26 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql://user:pass@db:5432/travel_db
 
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_DB=travel_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
   frontend:
     image: nginx:alpine
+    container_name: frontend
     ports:
-      - "80:80" 
+      - "3000:80" 
     volumes:
       - ./frontend:/usr/share/nginx/html
+  
+volumes:
+  postgres_data:
