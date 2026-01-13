@@ -3,13 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NY Travel Planner - Optimiseur DevOps</title>
+    <title>Travel Planner - Optimiseur DevOps</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
     <div class="container">
-        <h1>🗽 NY Trip Optimizer</h1>
+        <h1>🗽 Trip Optimizer</h1>
         
+        <label for="city">Ville de destination :</label>
+        <input type="text" id="city" placeholder="Ex: Paris, Tokyo, New York..." value="New York" required>
+        <div class="mode-selector"> </div>
+
         <label for="days">Nombre de jours de séjour :</label>
         <input type="number" id="days" value="2" min="1" title="Entrez le nombre de jours">
         
@@ -35,10 +41,9 @@
         </div>
         
         <button type="button" class="btn-submit" onclick="sendData()">OPTIMISER MON TRAJET</button>
-
+        <div id="map" style="height: 400px; width: 100%; margin: 20px 0; border-radius: 10px; border: 1px solid #ccc;"></div> 
         <div id="result"></div>
     </div>
-
     <script src="script.js"></script>
 </body>
 </html>

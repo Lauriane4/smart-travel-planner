@@ -1,3 +1,19 @@
+// Initialisation de la variable map (SANS l'assigner tout de suite)
+let map = null;
+let markersLayer = null;
+console.log("SCRIPT.JS CHARGÉ");
+
+
+// On initialise une carte par défaut au chargement
+window.onload = () => {
+    map = L.map('map').setView([20, 0], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    markersLayer = L.layerGroup().addTo(map);
+};
+
 // 1. Gestion du changement de mode (Onglets)
 function switchMode(mode) {
     const listContainer = document.getElementById('container-list');
@@ -42,6 +58,7 @@ function addActivityField() {
 // 3. Fonction pour envoyer les données au backend 
 async function sendData() {
     const days = document.getElementById('days').value;
+    const city = document.getElementById('city').value;
     const isTextMode = document.getElementById('container-text').style.display === 'block';
     let activities = [];
 
@@ -100,7 +117,8 @@ async function sendData() {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
-                days: parseInt(days), 
+                days: parseInt(days),
+                city: city, 
                 activities: activities
             })
         });
@@ -123,8 +141,56 @@ function displayResult(data) {
             html += `</ul></div>`;
         }
         document.getElementById('result').innerHTML = html;
+        displayMap(data);
     } catch (e) {
         console.error("Erreur d'affichage :", e);
         document.getElementById('result').innerHTML = "<p style='color:red;'>Erreur lors de l'affichage.</p>";
     }
+}
+
+function displayMap(data) {
+
+    if (!markersLayer) {
+        console.error("markersLayer non initialisé");
+        return;
+    }
+    console.log("DATA REÇUE :", data);
+
+    const firstDay = Object.keys(data)[0];
+    const firstAct = data[firstDay][0];
+    if (!firstAct || firstAct.latitude === undefined) {
+        console.warn("Pas de coordonnées pour afficher la carte");
+        return;
+    }
+
+
+    markersLayer.clearLayers();
+    map.setView([firstAct.latitude, firstAct.longitude], 12);
+
+    // 3. Ajouter les nouveaux marqueurs
+    const colors = ['blue', 'red', 'green', 'purple', 'orange', 'black', 'pink'];
+let dayIndex = 0;
+
+for (const [day, activities] of Object.entries(data)) {
+    const dayColor = colors[dayIndex % colors.length];
+    
+    activities.forEach(act => {
+        // On crée une icône personnalisée avec la couleur du jour
+        const customIcon = L.divIcon({
+            className: 'custom-div-icon',
+            html: `<div style="background-color: ${dayColor}; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white;"></div>`,
+            iconSize: [15, 15],
+            iconAnchor: [7, 7]
+            });
+
+            L.marker([act.latitude, act.longitude], { icon: customIcon })
+                .addTo(markersLayer)
+                .bindPopup(`<b>${day}</b><br>${act.name}`);
+        });
+        dayIndex++;
+    }
+    // 4. Correction du "Gris" : On force le recalcul de la taille
+    setTimeout(() => {
+        map.invalidateSize();
+    }, 200);
 }
