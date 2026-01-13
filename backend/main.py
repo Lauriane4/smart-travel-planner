@@ -8,7 +8,31 @@ from sklearn.cluster import KMeans
 import pandas as pd
 from fastapi.middleware.cors import CORSMiddleware
 from k_means_constrained import KMeansConstrained
+from sqlalchemy import create_engine, Column, Integer, String, Float
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, Session
 
+
+# Configuration SQL 
+DATABASE_URL = "postgresql://user:pass@db:5432/travel_db"
+
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+# Définition du modèle de données pour l'historique des plans
+class ItineraryHistory(Base):
+    __tablename__ = "itinerary_history"
+    id = Column(Integer, primary_key=True, index=True)
+    city = Column(String, nullable=False)
+    days = Column(Integer, nullable=False)
+    activities = Column(String, nullable=False) 
+    total_activities = Column(Integer, nullable=False)
+
+Base.metadata.create_all(bind=engine)
+
+
+# Initialisation de l'application FastAPI
 app = FastAPI() 
 
 app.add_middleware(
@@ -30,6 +54,7 @@ class Activity(BaseModel):
 
 class PlanRequest(BaseModel):
     days : int
+    city: str
     activities: List[Activity]
 
 @app.get("/")
@@ -43,7 +68,7 @@ def optimize_itinerary(request: PlanRequest):
     # Géocodage des adresses
     for activity in request.activities:
         try:
-            location = geolocator.geocode(activity.address + ", New York, USA")
+            location = geolocator.geocode(activity.address + ", " + request.city)
             if location:
                 data.append({
                     "name": activity.name,
@@ -78,10 +103,23 @@ def optimize_itinerary(request: PlanRequest):
     
     df['day_cluster'] = clf.fit_predict(df[['latitude', 'longitude']])
 
+
+    # Sauvegarde de l'itinéraire dans la base de données
+    db = SessionLocal()
+    itinerary_record = ItineraryHistory(
+        city=request.city,
+        days=n_days,
+        activities=str([activity.dict() for activity in request.activities]),
+        total_activities=num_activities
+    )
+    db.add(itinerary_record)
+    db.commit()
+    db.close()
+
     # Organisation des activités par jour
     itinerary = {}
     for day in range(n_days):
         day_activities = df[df['day_cluster'] == day]
-        itinerary[f'Day {day + 1}'] = day_activities[['name', 'category', 'address']].to_dict(orient='records')
+        itinerary[f'Day {day + 1}'] = day_activities[['name', 'category', 'address', 'latitude', 'longitude']].to_dict(orient='records')
 
     return itinerary
