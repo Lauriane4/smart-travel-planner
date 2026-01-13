@@ -5,3 +5,5 @@ geopy
 scikit-learn
 pandas
 k_means-constrained
+sqlalchemy
+psycopg2-binary
