@@ -6,6 +6,7 @@ from typing import List
 from pydantic import BaseModel
 from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut
+from geopy.extra.rate_limiter import RateLimiter
 from sklearn.cluster import KMeans
 import pandas as pd
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,6 +15,7 @@ from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session, relationship
 from datetime import datetime, timedelta
+from fastapi import Depends
 
 # Initialisation de l'application FastAPI
 app = FastAPI() 
@@ -54,11 +56,13 @@ class Activity(Base):
     longitude = Column(Float, nullable=False)
     day_assigned = Column(Integer, nullable=False)
 
-   
-Base.metadata.create_all(bind=engine)
+if __name__ == "__main__":
+    Base.metadata.create_all(bind=engine)
+
 
 
 geolocator = Nominatim(user_agent="travel_planner", timeout=10)
+geocode = RateLimiter(geolocator.geocode, min_delay_seconds=1)
 
 class ActivitySchema(BaseModel):
     name: str
@@ -71,6 +75,13 @@ class PlanRequest(BaseModel):
     city: str
     activities: List[ActivitySchema]
 
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 @app.get("/")
 def read_root():
     return {"message": "Bienvenue sur l'API de planification d'activités !"}
@@ -82,7 +93,7 @@ def optimize_itinerary(request: PlanRequest):
     # Géocodage des adresses
     for activity in request.activities:
         try:
-            location = geolocator.geocode(activity.address + ", " + request.city)
+            location = geocode(activity.address + ", " + request.city)
             if location:
                 data.append({
                     "name": activity.name,
@@ -93,6 +104,7 @@ def optimize_itinerary(request: PlanRequest):
                 })
             
         except GeocoderTimedOut:
+                location=None
                 continue
     if not data:
         return {"status": "error", "message": "Aucune adresse n'a été trouvée. Vérifie l'orthographe."}
@@ -104,20 +116,28 @@ def optimize_itinerary(request: PlanRequest):
     num_activities = len(df)
     n_days = request.days
 
+    if num_activities == 0:
+        return {"status": "error", "message": "Aucune activité trouvée."}
+
+    if num_activities < n_days: # Si moins d'activités que de jours, on assigne une activité par jour
+        n_days = num_activities
+
     # --- LOGIQUE D'ÉQUILIBRAGE ---
     min_per_day = num_activities // n_days
     max_per_day = min_per_day + 1
 
-    # On utilise KMeansConstrained pour forcer cette répartition
-    clf = KMeansConstrained(
-        n_clusters=n_days,
-        size_min=min_per_day,
-        size_max=max_per_day,
-        random_state=0
-    )
+    try:
+        # On utilise KMeansConstrained pour forcer cette répartition
+        clf = KMeansConstrained(
+            n_clusters=n_days,
+            size_min=min_per_day,
+            size_max=max_per_day,
+            random_state=0
+        )
 
-    df['day_cluster'] = clf.fit_predict(df[['latitude', 'longitude']])
-
+        df['day_cluster'] = clf.fit_predict(df[['latitude', 'longitude']])
+    except Exception as e:
+        df['day_cluster'] = 0 # En cas d'erreur, on assigne tout au jour 1
 
     # Sauvegarde de l'itinéraire dans la base de données
     db = SessionLocal()
@@ -142,8 +162,7 @@ def optimize_itinerary(request: PlanRequest):
     return itinerary
 
 @app.get("/history")
-def get_history():
-    db = SessionLocal()
+def get_history(db = Depends(get_db)):
     try:
         five_days_ago = datetime.utcnow() - timedelta(days=5)
         records = db.query(ItineraryHistory)\
