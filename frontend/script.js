@@ -1,4 +1,7 @@
-// Initialisation de la variable map (SANS l'assigner tout de suite)
+/* eslint-env browser */
+/* global setTimeout */
+
+// Initialisation de la variable map
 let map = null;
 let markersLayer = null;
 console.log("SCRIPT.JS CHARGÉ");
@@ -189,7 +192,7 @@ for (const [day, activities] of Object.entries(data)) {
         });
         dayIndex++;
     }
-    // 4. Correction du "Gris" : On force le recalcul de la taille
+    // 4. On force le recalcul de la taille
     setTimeout(() => {
         map.invalidateSize();
     }, 200);
@@ -229,3 +232,8 @@ function displayRecentItineraries(data) {
         container.appendChild(div);
     });
 }
+
+window.switchMode = switchMode;
+window.addActivityField = addActivityField;
+window.sendData = sendData;
+window.fetchRecentItineraries = fetchRecentItineraries;
