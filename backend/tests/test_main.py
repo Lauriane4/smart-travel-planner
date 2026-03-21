@@ -10,29 +10,6 @@ from main import app
 
 client = TestClient(app)
 
-@pytest.fixture
-def mock_geocode(autouse=True):
-    with patch("main.geolocator") as mock:
-        mock.geocode.return_value = MagicMock(
-            latitude=48.8566,
-            longitude=2.3522
-        )
-        yield mock
-
-@pytest.fixture(autouse=True)
-def override_db_dependency():
-    from main import app
-
-    def fake_get_db():
-        yield MagicMock()
-
-    app.dependency_overrides = {}
-    app.dependency_overrides[fake_get_db] = fake_get_db
-
-    yield
-
-    app.dependency_overrides = {}
-
 def test_read_root():
     response = client.get("/")
     assert response.status_code == 200

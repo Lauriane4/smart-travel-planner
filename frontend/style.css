@@ -7,6 +7,9 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 
         .btn-add { background-color: #6c757d; color: white; }
         .btn-submit { background-color: #28a745; color: white; width: 100%; margin-top: 20px; font-weight: bold; }
         button:hover { opacity: 0.8; }
+        #map { height: 400px; width: 100%; margin: 20px 0; border-radius: 10px; border: 1px solid #ccc; }
+        #container-text { display: none; }
+
 
 
 textarea {

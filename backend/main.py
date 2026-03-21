@@ -1,7 +1,6 @@
 import json
 import os
 from time import sleep
-from click import DateTime
 from fastapi import FastAPI, Depends
 from typing import List
 from pydantic import BaseModel
@@ -16,18 +15,6 @@ from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session, relationship
 from datetime import datetime, timedelta
-from fastapi import Depends
-
-# Initialisation de l'application FastAPI
-app = FastAPI() 
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"], 
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # Configuration SQL 
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@localhost:5432/mydb")
@@ -57,9 +44,24 @@ class Activity(Base):
     longitude = Column(Float, nullable=False)
     day_assigned = Column(Integer, nullable=False)
 
-if __name__ == "__main__":
+# Essayer de créer les tables - ne pas échouer en test si DB pas disponible
+try:
     Base.metadata.create_all(bind=engine)
+except Exception:
+    pass
 
+# Initialisation de l'application FastAPI
+app = FastAPI()
+
+app.dependency_overrides = {}
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], 
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 geolocator = Nominatim(user_agent="travel_planner", timeout=10)
@@ -88,7 +90,7 @@ def read_root():
     return {"message": "Bienvenue sur l'API de planification d'activités !"}
 
 @app.post("/optimize")
-def optimize_itinerary(request: PlanRequest):
+def optimize_itinerary(request: PlanRequest, db: Session = Depends(get_db)):
     data = []
 
     # Géocodage des adresses
@@ -141,7 +143,6 @@ def optimize_itinerary(request: PlanRequest):
         df['day_cluster'] = 0 # En cas d'erreur, on assigne tout au jour 1
 
     # Sauvegarde de l'itinéraire dans la base de données
-    db = SessionLocal()
     itinerary_record = ItineraryHistory(
         city=request.city,
         days=n_days,
@@ -152,7 +153,7 @@ def optimize_itinerary(request: PlanRequest):
     
     db.add(itinerary_record)
     db.commit()
-    db.close()
+    db.refresh(itinerary_record)
 
     # Organisation des activités par jour
     itinerary = {}
@@ -163,7 +164,7 @@ def optimize_itinerary(request: PlanRequest):
     return itinerary
 
 @app.get("/history")
-def get_history(db = Depends(get_db)):
+def get_history(db: Session = Depends(get_db)):
     try:
         five_days_ago = datetime.utcnow() - timedelta(days=5)
         records = db.query(ItineraryHistory)\
@@ -184,5 +185,3 @@ def get_history(db = Depends(get_db)):
     except Exception as e:
         print(f"Erreur lors de la récupération de l'historique : {e}")
         return []
-    finally:
-        db.close()

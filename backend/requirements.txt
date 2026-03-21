@@ -4,6 +4,8 @@ pydantic
 geopy
 scikit-learn
 pandas
-k_means-constrained
+k-means-constrained
 sqlalchemy
 psycopg2-binary
+pytest
+httpx
