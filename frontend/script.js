@@ -127,6 +127,7 @@ async function sendData() {
             })
         });
         const result = await response.json();
+        console.log("Résultat brut du backend :", JSON.stringify(result));
         displayResult(result);
     } catch (error) {
         alert("Erreur de connexion au backend. Vérifie que Docker tourne !");
