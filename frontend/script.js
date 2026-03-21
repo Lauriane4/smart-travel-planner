@@ -1,4 +1,4 @@
-/* eslint-env browser */
+
 /* global setTimeout */
 
 // Initialisation de la variable map
