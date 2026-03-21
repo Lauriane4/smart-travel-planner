@@ -47,9 +47,9 @@ Un planificateur d'itinéraire intelligent qui utilise l'algorithme **K-Means** 
 - **Déploiement backend** : API FastAPI déployée sur Render avec conteneurisation Docker.
 - **Base de données cloud** : Migration vers PostgreSQL managé sur Render.
 - **Déploiement frontend** : Interface déployée en Static Site sur Render.
-- ** CI/CD complet** : Redéploiement automatique à chaque push sur la branche main.
+- **CI/CD complet** : Redéploiement automatique à chaque push sur la branche main.
 
-- *Amélioration à venir : Optimisation du temps de démarrage (cold start) sur instance gratuite.*
+*Amélioration à venir : Optimisation du temps de démarrage (cold start) sur instance gratuite.*
 
 ## Pipeline CI/CD
 Ce projet intègre une chaîne d'intégration continue automatisée via **GitHub Actions** qui effectue :
