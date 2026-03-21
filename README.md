@@ -5,6 +5,8 @@ Un planificateur d'itinéraire intelligent qui utilise l'algorithme **K-Means** 
 ## Application en production
 👉 [Accéder à l'application](https://smart-travel-planner-pcox.onrender.com/)
 
+![Smart Travel Planner](image.png)
+
 ⚠️ L'instance gratuite Render peut mettre ~50 secondes à démarrer après une période d'inactivité.
 
 
