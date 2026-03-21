@@ -9,7 +9,8 @@ export default [
                 document: "readonly",
                 fetch: "readonly",
                 console: "readonly",
-                alert: "readonly"
+                alert: "readonly",
+                "L": "readonly"
             }
         },
         rules: {
