@@ -1,4 +1,4 @@
-# 🗽 Smart Travel Planner - NYC
+# 🗽 Smart Travel Planner 
 
 Un planificateur d'itinéraire intelligent qui utilise l'algorithme **K-Means** pour regrouper les activités par zone géographique et optimiser les déplacements quotidiens à New York.
 
