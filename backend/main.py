@@ -1,4 +1,5 @@
 import json
+import os
 from time import sleep
 from click import DateTime
 from fastapi import FastAPI, Depends
@@ -29,7 +30,7 @@ app.add_middleware(
 )
 
 # Configuration SQL 
-DATABASE_URL = "postgresql://user:pass@db:5432/travel_db"
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@localhost:5432/mydb")
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
