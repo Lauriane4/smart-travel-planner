@@ -9,4 +9,4 @@ COPY --from=builder /root/.local /root/.local
 COPY . .
 
 ENV PATH=/root/.local/bin:$PATH
-CMD ["uvicorn", "main:app", "--host", "127.0.0.1", "--port", "3000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

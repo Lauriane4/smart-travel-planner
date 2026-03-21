@@ -116,7 +116,8 @@ async function sendData() {
     }
 
     try {
-        const response = await fetch('http://localhost:8000/optimize', {
+        //const response = await fetch('http://localhost:8000/optimize', {
+        const response = await fetch('https://smart-travel-planner-backend.onrender.com/optimize', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
@@ -126,6 +127,7 @@ async function sendData() {
             })
         });
         const result = await response.json();
+        console.log("Résultat brut du backend :", JSON.stringify(result));
         displayResult(result);
     } catch (error) {
         alert("Erreur de connexion au backend. Vérifie que Docker tourne !");
@@ -200,7 +202,8 @@ for (const [day, activities] of Object.entries(data)) {
 
 async function fetchRecentItineraries() {
     try {
-        const res = await fetch("http://localhost:8000/history");
+        //const res = await fetch("http://localhost:8000/history");
+        const res = await fetch('https://smart-travel-planner-backend.onrender.com/history');
         const responseData = await res.json();
         
         // Debugging
